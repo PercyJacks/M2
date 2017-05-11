@@ -21,12 +21,19 @@ ISR(INT0_vect){ //Catch interrupt 0 PD2 is the interrupt try to get PD2 high on 
     xQueueSendFromISR( xRxedChars, &prt, pdFALSE); //Post value of PORTC to queue
 }
 
-
+ISR(INT1_vect){ //Catch interrupt 1, PD3, resets systemss
+int i;
+	for(i=0;i<4;i++)
+	{
+		xQueueReceive( xRxedChars, &store)//empty queue
+	}
+	xQueueSendFromISR( xRxedChars, Button0, pdFALSE);//go to floor 0
+}
 
 
 void lift(void){
-    unsigned char t, q;
-    unsigned char State; // Start going down.
+    unsigned char t, q, t2, q2;
+    unsigned char State, State2; // Start going down.
     PORTA = 0xFF;
     State = To0;
 	
@@ -40,12 +47,15 @@ void lift(void){
         }
 	portEXIT_CRITICAL();
 	
+	MCUCR |= 0x004; //enable interrupt 1
+	
 	for(;;)
 	{
-        t = xQueueReceive( xRxedChars, &store, 250 * 5 ); // read lift sensors from queue, 5 second time out
-        t = (~t) & 0x7F; // Lift is negative logic
-		do //execute at least once
+		if(State == At0 | At1 | At2)
 		{
+			    t = xQueueReceive( xRxedChars, &store, 250 * 5 ); // read lift sensors from queue, 5 second time out
+				t = (~t) & 0x7F; // Lift is negative logic
+		}
 			switch(State) {
 				case To0:
 					q = MotorOn | MotorDown | Lamp0;
@@ -61,13 +71,13 @@ void lift(void){
 					else
 						State = To1;
 					break;
-				case XTo2:
+				case To2:
 					q = MotorOn | Lamp2;
 					if(t & Floor2)
 						State = At2;
 					else
 						State = To1;
-					break;		
+					break;
 				case At0:
 					q = STATIC;
 					if(t & Button1)
@@ -97,10 +107,69 @@ void lift(void){
 					else
 						State = At2;
 					break;
+					
+					
+		if(State2 == At0 | At1 | At2)
+		{
+			    t2 = xQueueReceive( xRxedChars, &store, 250 * 5 ); // read lift sensors from queue, 5 second time out
+				t2 = (~t) & 0x7F; // Lift is negative logic
+		}
+			switch(State2) {
+				case To0:
+					q2 = MotorOn | MotorDown | Lamp0;
+					if(t2 & Floor0)
+						State2 = At0;
+					else
+						State2 = To0;
+					break;
+				case To1:
+					q2 |= MotorOn | Lamp1;
+					if(t2 & Floor1)
+						State2 = At1;
+					else
+						State2 = To1;
+					break;
+				case To2:
+					q2 = MotorOn | Lamp2;
+					if(t & Floor2)
+						State2 = At2;
+					else
+						State2 = To1;
+					break;
+				case At0:
+					q2 = STATIC;
+					if(t2 & Button1)
+						State = To1;
+						q2 = 0;
+					else if(t2 & Button2)
+						State2 = To2;
+					else
+						State2 = At0;
+					break;
+				case At1:
+					q2 = STATIC;
+					if(t2 & Button0)
+						State2 = To0;
+					else if(t & Button2)
+						State2 = To2;
+					else
+						State2 = At1;
+					break;
+				case At2:
+					q2 = STATIC;
+					if(t2 & Button0)
+						State2 = To0;
+					else if(t2 & Button1)
+						State2 = To1;	
+						q2 = motorDown;
+					else
+						State2 = At2;
+					break;
             }
-		}while(State == To0 | To1 | To2); //stop executing once ready
             // Set the lift control bits
-            PORTB = q;
+            PORTB = q + (q2*32); \\shift q2 
             PORTA = (~q) & 0x1F;
+			
+			//i dont know how to output the action for q2.
 	}
 }

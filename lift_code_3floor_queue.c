@@ -21,8 +21,8 @@ ISR(INT0_vect){ //Catch interrupt 0 PD2 is the interrupt try to get PD2 high on 
     xQueueSendFromISR( xRxedChars, &prt, pdFALSE); //Post value of PORTC to queue
 }
 
-ISR(INT1_vect){ //Catch interrupt 1, PD3
-int i
+ISR(INT1_vect){ //Catch interrupt 1, PD3, resets systemss
+int i;
 	for(i=0;i<4;i++)
 	{
 		xQueueReceive( xRxedChars, &store)//empty queue
