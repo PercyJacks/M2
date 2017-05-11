@@ -1,7 +1,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "lift.h"
-#include "queue.h"
 
 
 /*
@@ -13,37 +12,8 @@ This task spends most of its time sleeping, so the infinite loop does not stop o
 
 */
 
-
-
 ISR(INT0_vect){ //Catch interrupt 0
-    signed portCHAR prt;;
-	prt = PORTC;
-    xQueueSendFromISR( xRxedChars, &prt, pdFALSE); //Post value of PORTC to queue
-}
-
-
-
-
-void lift(void){
-    unsigned char t, q;
-    unsigned char State; // Start going down.
-    PORTA = 0xFF;
-    State = To0;
-	
-	//I'm not sure how queues work in RTOS, trying to use these, I think this exists in queue.c, however, if this doesnt work,
-	//try implementing a queue using a 
-	portENTER_CRITICAL();// Create queue and enable interupts. Dont want anything getting in the way
-        {
-		xRxedChars = xQueueCreate( 4, ( unsigned portBASE_TYPE ) sizeof( signed portCHAR ) );
-        MCUCR = MCUCR | 0x03;
-        GICR = GICR | 0x40; // Enable interupt 0
-        }
-	portEXIT_CRITICAL();
-	
-	for(;;)
-	{
-		vTaskDelay(Seconds2Ticks(.05));  // 20 times per second
-        t = xQueueReceive( xRxedChars, &store, 250 * 5 ); // read lift sensors from queue, 5 second time out
+t = PINC; // read lift sensors from port B
         t = (~t) & 0x7F; // Lift is negative logic
 		switch(State) {
             case To0:
@@ -100,5 +70,18 @@ void lift(void){
             // Set the lift control bits
             PORTB = q;
             PORTA = (~q) & 0x1F;
+}
+
+
+void lift(void){
+    unsigned char t, q;
+    unsigned char State; // Start going down.
+    PORTA = 0xFF;
+    State = To0;
+	MCUCR = MCUCR | 0x03;
+	GICR = GICR | 0x40; // Enable interupt 0
+	for(;;)
+	{
+		
 	}
 }
