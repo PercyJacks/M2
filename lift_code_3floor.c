@@ -36,7 +36,7 @@ void lift(void){
                 else
                     State = To1;
                 break;
-			case To2:
+	    case To2:
                 q = MotorOn | Lamp2;
                 if(t & Floor2)
                     State = At2;
@@ -47,8 +47,8 @@ void lift(void){
                 q = STATIC;
                 if(t & Button1)
                     State = To1;
-					q = 0;
-				else if(t & Button2)
+		    q = 0;
+		else if(t & Button2)
                     State = To2;
                 else
                     State = At0;
@@ -57,18 +57,18 @@ void lift(void){
                 q = STATIC;
                 if(t & Button0)
                     State = To0;
-				else if(t & Button2)
+		else if(t & Button2)
                     State = To2;
                 else
                     State = At1;
                 break;
-			case At2:
+	    case At2:
                 q = STATIC;
                 if(t & Button0)
                     State = To0;
-				else if(t & Button1)
+		else if(t & Button1)
                     State = To1;	
-					q = motorDown;
+		    q = motorDown;
                 else
                     State = At2;
                 break;
