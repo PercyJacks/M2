@@ -15,13 +15,20 @@ This task spends most of its time sleeping, so the infinite loop does not stop o
 
 
 
-ISR(INT0_vect){ //Catch interrupt 0
+ISR(INT0_vect){ //Catch interrupt 0 PD2 is the interrupt try to get PD2 high on pin change with logic gates
     signed portCHAR prt;;
 	prt = PORTC;
     xQueueSendFromISR( xRxedChars, &prt, pdFALSE); //Post value of PORTC to queue
 }
 
-
+ISR(INT1_vect){ //Catch interrupt 1, PD3
+int i
+	for(i=0;i<4;i++)
+	{
+		xQueueReceive( xRxedChars, &store)//empty queue
+	}
+	xQueueSendFromISR( xRxedChars, Button0, pdFALSE);//go to floor 0
+}
 
 
 void lift(void){
@@ -40,62 +47,65 @@ void lift(void){
         }
 	portEXIT_CRITICAL();
 	
+	MCUCR |= 0x004; //enable interrupt 1
+	
 	for(;;)
 	{
-		vTaskDelay(Seconds2Ticks(.05));  // 20 times per second
         t = xQueueReceive( xRxedChars, &store, 250 * 5 ); // read lift sensors from queue, 5 second time out
         t = (~t) & 0x7F; // Lift is negative logic
-		switch(State) {
-            case To0:
-                q = MotorOn | MotorDown | Lamp0;
-                if(t & Floor0)
-                    State = At0;
-                else
-                    State = To0;
-                break;
-            case To1:
-                q |= MotorOn | Lamp1;
-                if(t & Floor1)
-                    State = At1;
-                else
-                    State = To1;
-                break;
-			case To2:
-                q = MotorOn | Lamp2;
-                if(t & Floor2)
-                    State = At2;
-                else
-                    State = To1;
-                break;
-            case At0:
-                q = STATIC;
-                if(t & Button1)
-                    State = To1;
-					q = 0;
-				else if(t & Button2)
-                    State = To2;
-                else
-                    State = At0;
-                break;
-            case At1:
-                q = STATIC;
-                if(t & Button0)
-                    State = To0;
-				else if(t & Button2)
-                    State = To2;
-                else
-                    State = At1;
-                break;
-			case At2:
-                q = STATIC;
-                if(t & Button0)
-                    State = To0;
-				else if(t & Button1)
-                    State = To1;	
-					q = motorDown;
-                else
-                    State = At2;
-                break;
+		do//execute at least once
+		{
+			switch(State) {
+				case To0:
+					q = MotorOn | MotorDown | Lamp0;
+					if(t & Floor0)
+						State = At0;
+					else
+						State = To0;
+					break;
+				case To1:
+					q |= MotorOn | Lamp1;
+					if(t & Floor1)
+						State = At1;
+					else
+						State = To1;
+					break;
+				case To2:
+					q = MotorOn | Lamp2;
+					if(t & Floor2)
+						State = At2;
+					else
+						State = To1;
+					break;
+				case At0:
+					q = STATIC;
+					if(t & Button1)
+						State = To1;
+						q = 0;
+					else if(t & Button2)
+						State = To2;
+					else
+						State = At0;
+					break;
+				case At1:
+					q = STATIC;
+					if(t & Button0)
+						State = To0;
+					else if(t & Button2)
+						State = To2;
+					else
+						State = At1;
+					break;
+				case At2:
+					q = STATIC;
+					if(t & Button0)
+						State = To0;
+					else if(t & Button1)
+						State = To1;	
+						q = motorDown;
+					else
+						State = At2;
+		break;} while(State == t0 | t1 | t2};//stay if moving
             }
             // Set the lift control bits
             PORTB = q;

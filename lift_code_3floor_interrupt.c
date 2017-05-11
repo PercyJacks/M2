@@ -82,6 +82,6 @@ void lift(void){
 	GICR = GICR | 0x40; // Enable interupt 0
 	for(;;)
 	{
-		
+		//contents fo for loop moved to interrupt, just run for loop so function doesnt return.
 	}
 }
